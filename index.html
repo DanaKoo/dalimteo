@@ -116,6 +116,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--signal);outline
 .lab.pacer .no{background:var(--ink);color:var(--warn)}
 .lab.me{border-width:2px}
 .huff{position:fixed;z-index:3;left:0;top:0;pointer-events:none;font-family:var(--f-display);font-size:20px;color:var(--paper);-webkit-text-stroke:1px var(--ink);text-shadow:0 2px 0 var(--ink);will-change:transform,opacity}
+#hint .hm{display:none}
 #hint{position:fixed;z-index:4;top:calc(16% + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);text-align:center;font-size:12.5px;line-height:1.6;color:var(--paper);background:rgba(23,25,28,.82);padding:7px 14px;border-radius:4px;transition:opacity 1s;pointer-events:none;width:max-content;max-width:calc(100% - 32px)}
 #toast{position:fixed;z-index:8;left:50%;top:calc(28% + env(safe-area-inset-top,0px));transform:translateX(-50%);padding:9px 16px;font-size:14px;font-weight:500;background:var(--ink);color:var(--paper);border-radius:4px;border-left:5px solid var(--signal);opacity:0;transition:opacity .35s;pointer-events:none;max-width:calc(100% - 32px);text-align:center}
 #toast.show{opacity:1}
@@ -207,11 +208,16 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--signal);outline
   #bibNo{font-size:54px}
 }
 @media (max-width:640px){
-  #course{max-width:calc(100% - 186px)} #srvName{font-size:18px} .cname{padding:5px 10px 6px}
-  #rcol{width:150px;gap:8px} #clock{font-size:24px} #wxTemp{font-size:18px} #wxIcon,#wxIcon svg{width:20px;height:20px}
-  #map{padding:6px 6px 5px} #progR{font-size:15px} #progL{display:none}
+  #course{left:max(10px,env(safe-area-inset-left,0px));width:calc(100% - 20px - 118px - 8px);max-width:none;overflow:hidden}
+  #srvBtn{width:100%} #srvNo{font-size:12px;padding:0 6px} #srvName{font-size:17px} #srvMeta{font-size:11px} .cname{padding:5px 8px 6px;flex:1} .caret{display:none}
+  #rcol{right:max(10px,env(safe-area-inset-right,0px));width:118px;gap:6px} #hint .hd{display:none} #hint .hm{display:inline}
+  #watch{padding:6px 8px 5px;overflow:hidden;min-width:0;cursor:pointer;border-radius:10px} .wbtns{display:none}
+  #clock{font-size:22px} #wxTemp{font-size:16px} #wxIcon,#wxIcon svg{width:18px;height:18px} .wtop{gap:5px} .wsub{font-size:10.5px;margin-top:2px}
+  #wxEff{font-size:11px;padding:4px 8px 4px 26px} #wxEff::before{left:6px;width:12px;height:12px} #wxEff::after{left:10.5px;font-size:9px}
+  #map{padding:5px 5px 4px} #progR{font-size:12px} #progL{display:none} #progBar{height:5px;margin-top:3px}
+  .glabel{display:none} #gear{padding:5px} .gb{padding:5px 4px 4px}
   #dock{grid-template-columns:1fr auto;grid-template-areas:"stats slots" "gear gear";gap:8px}
-  #stats{width:auto;padding:7px 9px;max-width:100%} #sPace{font-size:30px} .sgrid .num{font-size:17px} .stamRow{margin-top:5px}
+  #stats{width:auto;padding:7px 9px;max-width:100%} #sPace{font-size:30px} .sgrid{gap:10px} .sgrid .num{font-size:17px} .stamRow{margin-top:5px}
   #gear{justify-self:stretch} .gb{min-width:0}
   .slot{width:50px;height:54px;font-size:10.5px} .slot kbd{display:none} .slot.shop{flex-direction:column;gap:0;padding:0 8px;font-size:11px} #coins{font-size:16px}
   #hint{top:calc(30% + env(safe-area-inset-top,0px))}
@@ -241,7 +247,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--signal);outline
     <div id="progBar"><i></i></div>
   </figure>
 </div>
-<div id="hint">바닥 클릭으로 이동 · 더블클릭은 질주 · 드래그로 둘러보기 · 휠로 확대/축소<br>아래 트랙은 코스 따라 달리기 · E 응원 · W 물 · G 젤 · ←→ 차선</div>
+<div id="hint"><span class="hd">바닥 클릭으로 이동 · 더블클릭은 질주 · 드래그로 둘러보기 · 휠로 확대/축소<br>아래 트랙은 코스 따라 달리기 · E 응원 · W 물 · G 젤 · ←→ 차선</span><span class="hm">바닥을 탭하면 이동 · 두 번 탭하면 질주<br>드래그로 둘러보기 · 두 손가락으로 확대/축소</span></div>
 <div id="toast"></div>
 
 <div id="dock">
@@ -314,6 +320,7 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--signal);outline
       <span>날씨</span><div class="seg" id="segWx"></div>
       <span>시간</span><div class="seg" id="segTime"></div>
       <span>코스 배속</span><div class="seg" id="segTs"></div>
+      <span>소리</span><div class="seg" id="segSnd"></div>
       <span>내 위치</span><div><button class="x" id="relocBtn">위치 다시 받기</button></div>
     </div>
     <p class="note" id="setNote"></p>
@@ -866,6 +873,7 @@ addEventListener('click',e=>{if(!e.target.closest('#menu')&&!e.target.closest('#
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.ov').hidden=true);
 document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o&&o.id!=='lobby')o.hidden=true}));
 $('#shopBtn').onclick=()=>{renderShop();$('#shop').hidden=false};
+$('#watch').addEventListener('click',e=>{if(e.target.closest('button'))return;renderSettings();$('#settings').hidden=false});
 $('#setBtn').onclick=()=>{renderSettings();$('#settings').hidden=false};
 $('#muteBtn').onclick=()=>{initAudio();S.mute=!S.mute;save();if(master)master.gain.value=S.mute?0:.9;$('#muteBtn').textContent=S.mute?'소리 꺼짐':'소리 켬'};
 $('#muteBtn').textContent=S.mute?'소리 꺼짐':'소리 켬';
@@ -900,6 +908,7 @@ function renderSettings(){
   seg($('#segWx'),[['auto','내 위치 날씨'],['clear','맑음'],['cloudy','흐림'],['drizzle','이슬비'],['rain','비'],['heavy','폭우'],['snow','눈'],['storm','뇌우']],S.wxo,v=>{S.wxo=v;save()});
   seg($('#segTime'),[['auto','내 시간'],['dawn','새벽'],['day','낮'],['dusk','노을'],['night','밤']],S.tmo,v=>{S.tmo=v;save()});
   seg($('#segTs'),[[1,'×1 실제'],[5,'×5'],[10,'×10'],[20,'×20']],S.ts,v=>{S.ts=v;save()});
+  seg($('#segSnd'),[[false,'켬'],[true,'끔']],!!S.mute,v=>{initAudio();S.mute=v;save();if(master)master.gain.value=S.mute?0:.9;$('#muteBtn').textContent=S.mute?'소리 꺼짐':'소리 켬'});
   $('#setNote').textContent=(W.live?'GPS 위치 '+(W.place||'')+' 기준으로 '+WXL[W.code]+' '+W.temp+'°C, 일출 '+fmtH(W.sr)+' · 일몰 '+fmtH(W.ss)+'을 반영하고 있어요. ':'아직 위치를 받지 못해 기기 시계로 시간만 맞추고 있어요. 날씨는 위에서 직접 고를 수 있어요. ')+'배속은 화면 속 이동 속도만 빠르게 해요. ×1이면 실제 페이스 그대로 2.56km에 15분 정도 걸려요.';
 }
 function fmtH(h){if(h==null)return'–';return Math.floor(h)+':'+String(Math.round(h%1*60)).padStart(2,'0')}
