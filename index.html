@@ -282,23 +282,6 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--signal);outline
   <div class="chips" id="cheerChips"></div>
 </div>
 <div id="boost" hidden></div>
-<div id="lobby" class="ov">
-  <div class="card reg">
-    <div class="reghead"><h1>달림<span>터</span></h1><p>지금 내 위치의 시간과 날씨 그대로, 다른 러너들과 같은 코스를 달려요.</p></div>
-    <div class="regbody">
-      <div class="shirt" id="shirtBg">
-        <div class="bp"><div class="bp-top">DALLIMTEO RUN</div><div id="bibNo">0000</div><div id="bibName"></div><div id="bibSrv"></div></div>
-      </div>
-      <div class="regform">
-        <div><div class="lbl">러너 이름 · 셔츠 색</div><div class="nickrow"><input id="nick" maxlength="12" autocomplete="off" aria-label="러너 이름"><div class="sw" id="shirtSw" aria-label="셔츠 색"></div></div></div>
-        <div><div class="lbl">코스 선택</div><div class="srvs" id="srvList"></div></div>
-        <div id="lobWx">위치와 날씨를 확인하고 있어요…</div>
-      </div>
-    </div>
-    <button class="go" id="goBtn">출발선에 서기</button>
-  </div>
-</div>
-
 <div id="shop" class="ov" hidden>
   <div class="card">
     <div class="row"><h2>러닝 상점</h2><div style="display:flex;align-items:center;gap:8px"><span class="coin"></span><b id="shopCoins" class="num" style="font-size:20px">0</b><button class="x" data-close>닫기</button></div></div>
@@ -317,6 +300,8 @@ button:focus-visible,input:focus-visible{outline:3px solid var(--signal);outline
   <div class="card">
     <div class="row"><h2>설정</h2><button class="x" data-close>닫기</button></div>
     <div class="set">
+      <span>러너 이름</span><div class="nickrow"><input id="nick" maxlength="12" autocomplete="off" aria-label="러너 이름"></div>
+      <span>셔츠 색</span><div class="sw" id="shirtSw" aria-label="셔츠 색"></div>
       <span>날씨</span><div class="seg" id="segWx"></div>
       <span>시간</span><div class="seg" id="segTime"></div>
       <span>코스 배속</span><div class="seg" id="segTs"></div>
@@ -851,24 +836,15 @@ let toastT=null;function toast(t){const el=$('#toast');el.textContent=t;el.class
 
 /* ---------- UI: lobby, shop, settings ---------- */
 function peersIn(id){if(!room)return 0;let n=0;for(const p of room.peers()){if(p.sameTab)continue;if(p.presence&&p.presence.srv===id)n++}return n}
-function renderLobby(){
-  $('#nick').value=S.nick;renderBib();
-  const sw=$('#shirtSw');sw.innerHTML='';SHIRTS.forEach(c=>{const b=document.createElement('button');b.style.background=c;b.setAttribute('aria-label','셔츠 색 '+c);if(c===S.shirt)b.className='on';b.onclick=()=>{S.shirt=c;save();renderLobby()};sw.appendChild(b)});
-  const L=$('#srvList');L.innerHTML='';SERVERS.forEach(s=>{const b=document.createElement('button');b.className='srv'+(s.id===srv.id?' on':'');b.dataset.id=s.id;
-    const cnt=(s.kind==='race'?12:8)+peersIn(s.id);
-    b.innerHTML='<span class="c"></span><div class="t"><span></span></div><small></small><div class="k"></div>';b.querySelector('.c').textContent='C'+s.no;
-    b.querySelector('.t span').textContent=s.name;b.querySelector('small').textContent=cnt+'명';
-    b.querySelector('.k').textContent=s.sub+' · '+(s.kind==='race'?'42.195km 풀코스':(s.lapM/1000).toFixed(2)+'km 루프');
-    b.title=s.desc;
-    b.onclick=()=>{if(s.id!==srv.id)enterServer(s.id);renderLobby()};L.appendChild(b)});
+function renderRunner(){
+  const n=$('#nick');if(document.activeElement!==n)n.value=S.nick;
+  const sw=$('#shirtSw');sw.innerHTML='';SHIRTS.forEach(c=>{const b=document.createElement('button');b.style.background=c;b.setAttribute('aria-label','셔츠 색 '+c);if(c===S.shirt)b.className='on';b.onclick=()=>{S.shirt=c;save();applyOutfit();renderRunner()};sw.appendChild(b)});
 }
-function renderCounts(){document.querySelectorAll('.srv').forEach(b=>{const s=SV[b.dataset.id];if(s)b.querySelector('small').textContent=((s.kind==='race'?12:8)+peersIn(s.id))+'명'})}
-function renderBib(){$('#bibNo').textContent=bibOf(S.nick);$('#bibName').textContent=S.nick;$('#bibSrv').textContent=srv.name.toUpperCase()+' · '+(srv.kind==='race'?'42.195K':(srv.lapM/1000).toFixed(2)+'K');$('#shirtBg').style.background=S.shirt}
-$('#nick').addEventListener('input',e=>{S.nick=e.target.value.trim().slice(0,12)||S.nick;save();renderBib()});
-$('#goBtn').onclick=()=>{initAudio();S.nick=($('#nick').value.trim()||S.nick).slice(0,12);save();$('#lobby').hidden=true;enterServer(S.srv);running=true;
-  hintT=setTimeout(hideHint,9000);try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(e){}};
-function exitToLobby(){says.forEach(x=>x.el.remove());says.length=0;$('#cheerPop').hidden=true;running=false;setMode(0);renderLobby();$('#lobby').hidden=false;pushPresence()}
-$('#srvBtn').onclick=e=>{e.stopPropagation();const m=$('#menu');if(!m.hidden){m.hidden=true;return}m.innerHTML='';SERVERS.forEach(s=>{const b=document.createElement('button');const a=document.createElement('span');a.textContent='C'+s.no+'  '+s.name;if(s.id===srv.id)b.className='on';const c=document.createElement('small');c.textContent=String((s.kind==='race'?12:8)+peersIn(s.id)+(s.id===srv.id?1:0)).padStart(2,'0')+'/100';b.append(a,c);b.onclick=()=>{m.hidden=true;if(s.id!==srv.id){enterServer(s.id);toast(s.name+' 서버에 들어왔어요')}};m.appendChild(b)});m.appendChild(document.createElement('hr'));const ex=document.createElement('button');ex.className='exit';ex.textContent='출발선 밖으로 나가기';ex.onclick=()=>{m.hidden=true;exitToLobby()};m.appendChild(ex);m.hidden=false};
+$('#nick').addEventListener('input',e=>{const v=e.target.value.trim().slice(0,12);if(!v)return;S.nick=v;save();if(me){me.lab._s.textContent=v;me.lab._n.textContent=bibOf(v)}});
+$('#nick').addEventListener('blur',e=>{e.target.value=S.nick});
+function firstTouch(){initAudio();try{navigator.wakeLock&&navigator.wakeLock.request('screen').catch(()=>{})}catch(e){}removeEventListener('pointerdown',firstTouch,true);removeEventListener('keydown',firstTouch,true)}
+addEventListener('pointerdown',firstTouch,true);addEventListener('keydown',firstTouch,true);
+$('#srvBtn').onclick=e=>{e.stopPropagation();const m=$('#menu');if(!m.hidden){m.hidden=true;return}m.innerHTML='';SERVERS.forEach(s=>{const b=document.createElement('button');const a=document.createElement('span');a.textContent='C'+s.no+'  '+s.name;if(s.id===srv.id)b.className='on';const c=document.createElement('small');c.textContent=String((s.kind==='race'?12:8)+peersIn(s.id)+(s.id===srv.id?1:0)).padStart(2,'0')+'/100';b.append(a,c);b.onclick=()=>{m.hidden=true;if(s.id!==srv.id){enterServer(s.id);toast(s.name+' 코스에 들어왔어요')}};m.appendChild(b)});m.hidden=false};
 addEventListener('click',e=>{if(!e.target.closest('#menu')&&!e.target.closest('#srvBtn'))$('#menu').hidden=true});
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>b.closest('.ov').hidden=true);
 document.querySelectorAll('.ov').forEach(o=>o.addEventListener('click',e=>{if(e.target===o&&o.id!=='lobby')o.hidden=true}));
@@ -905,6 +881,7 @@ function applyOutfit(){if(me)me.r.set(outfit())}
 function updateInv(){$('#waterN').textContent=S.inv.water;$('#gelN').textContent=S.inv.gel}
 function seg(el,opts,val,fn){el.innerHTML='';opts.forEach(([v,l])=>{const b=document.createElement('button');b.textContent=l;if(v===val)b.className='on';b.onclick=()=>{fn(v);renderSettings();updateWxUI()};el.appendChild(b)})}
 function renderSettings(){
+  renderRunner();
   seg($('#segWx'),[['auto','내 위치 날씨'],['clear','맑음'],['cloudy','흐림'],['drizzle','이슬비'],['rain','비'],['heavy','폭우'],['snow','눈'],['storm','뇌우']],S.wxo,v=>{S.wxo=v;save()});
   seg($('#segTime'),[['auto','내 시간'],['dawn','새벽'],['day','낮'],['dusk','노을'],['night','밤']],S.tmo,v=>{S.tmo=v;save()});
   seg($('#segTs'),[[1,'×1 실제'],[5,'×5'],[10,'×10'],[20,'×20']],S.ts,v=>{S.ts=v;save()});
@@ -932,11 +909,6 @@ function updateWxUI(){
   if(m.wx<1)eff.push(WXL[code]+' 속도 −'+Math.round((1-m.wx)*100)+'%'+(S.eq.jacket?' (바람막이)':''));
   if(hot())eff.push('더위 '+W.temp+'° · 체력 소모↑'+(S.eq.cap?' (캡)':''));
   const e=$('#wxEff');e.hidden=!eff.length;e.textContent=eff.join(' · ');
-  const lw=$('#lobWx');
-  lw.textContent='';const b=document.createElement('b');
-  if(W.live){b.textContent=(W.place||'현재 위치')+' · '+WXL[W.code]+' '+W.temp+'°C';lw.append(b,' · 지금 시각 '+timeStr()+'. 코스의 하늘, 해 위치, 날씨가 여기에 맞춰져요.'+(WXSPD[W.code]<1?' 오늘은 '+WXL[W.code]+'라서 조금 천천히 달리게 돼요.':''))}
-  else if(W.status==='locating'){lw.textContent='위치와 날씨를 확인하고 있어요…'}
-  else{b.textContent='위치를 받지 못했어요.';lw.append(b,' 시간은 기기 시계('+timeStr()+') 기준으로 맞추고, 날씨는 설정에서 고를 수 있어요.')}
 }
 setInterval(updateWxUI,15000);
 const WXICON={clear:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M5 5l1.5 1.5M17.5 17.5L19 19M5 19l1.5-1.5M17.5 6.5L19 5"/></svg>',moon:'<svg viewBox="0 0 24 24"><path d="M20 14a8 8 0 1 1-10-10 6.5 6.5 0 0 0 10 10z"/></svg>',cloudy:'<svg viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 18z"/></svg>',fog:'<svg viewBox="0 0 24 24"><path d="M4 9h16M3 13h18M5 17h14"/></svg>',drizzle:'<svg viewBox="0 0 24 24"><path d="M7 14h10a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 14z"/><path d="M9 17v1M14 17v1"/></svg>',rain:'<svg viewBox="0 0 24 24"><path d="M7 13h10a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 13z"/><path d="M8 16l-1 3M12 16l-1 3M16 16l-1 3"/></svg>',heavy:'<svg viewBox="0 0 24 24"><path d="M7 12h10a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 12z"/><path d="M7 15l-1.5 5M11 15l-1.5 5M15 15l-1.5 5M19 15l-1.5 5"/></svg>',snow:'<svg viewBox="0 0 24 24"><path d="M7 13h10a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 13z"/><path d="M8 17h.01M12 19h.01M16 17h.01M10 21h.01M14 21h.01"/></svg>',storm:'<svg viewBox="0 0 24 24"><path d="M7 13h10a4 4 0 0 0 0-8 6 6 0 0 0-11.5 1.5A3.3 3.3 0 0 0 7 13z"/><path d="M12 14l-2 4h3l-2 4"/></svg>'};
@@ -955,7 +927,7 @@ function updateMap(){if(!MAP)return;const g=$('#mapDots');if(!g)return;let h='';
 
 /* ---------- multiplayer (room capability) ---------- */
 let room=null;
-(async()=>{try{if(window.claude&&window.claude.use){room=await window.claude.use('room');if(room){room.onPeers(()=>{syncPeers();if(!$('#lobby').hidden)renderCounts()},()=>{room=null})}}}catch(e){room=null}})();
+(async()=>{try{if(window.claude&&window.claude.use){room=await window.claude.use('room');if(room){room.onPeers(()=>{syncPeers()},()=>{room=null})}}}catch(e){room=null}})();
 function pushPresence(){if(!room)return;const o=outfit();
   room.presence(running?{srv:srv.id,n:S.nick.slice(0,12),d:Math.round((P.tu%srv.loopM)*10)/10,f:P.st==='track'?0:1,x:Math.round(P.x*10)/10,z:Math.round(P.z*10)/10,h:Math.round(P.head*100)/100,km:Math.round(P.dist/100)/10,ln:Math.round(P.lane*10)/10,m:P.mode,ch:P.cheerId?{i:P.cheerId,p:P.cheerTxt}:null,o:[o.shirt,o.shoe,o.vest?1:0,o.cap?1:0,o.jacket?1:0]}:{srv:null}).catch(()=>{})}
 setInterval(pushPresence,250);
@@ -1135,8 +1107,10 @@ addEventListener('resize',resize);resize();
 addEventListener('pagehide',save);document.addEventListener('visibilitychange',()=>{if(document.hidden)save()});
 
 /* ---------- boot ---------- */
-enterServer(S.srv);me.lab.style.display='none';
-renderLobby();updateInv();updateWxUI();locate();
+enterServer(S.srv);running=true;
+updateInv();updateWxUI();locate();
+hintT=setTimeout(hideHint,9000);
+setTimeout(()=>toast(srv.name+' 코스예요 · 위쪽 코스 이름을 누르면 다른 코스로, 워치를 누르면 이름·셔츠 설정'),600);
 requestAnimationFrame(frame);
 })();
 </script>
